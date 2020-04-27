@@ -15,19 +15,19 @@ Save_file=1;
 GrowthSplit=1;
 
 %Start of anneal/seeding time in original seconds
-AnnealStartTime=68;
+AnnealStartTime=69;
 
 %GeH4 on time, only records in file, doesn't split
-GermaneTime=285;
+GermaneTime=309;
 
 %Start of cooling time in original seconds
-CoolingStartTime=668;
+CoolingStartTime=669.5;
 
 %Start of steady state growth time in original seconds
-GrowthStartTime=728;
+GrowthStartTime=730;
 
 %End time in original seconds
-EndTime=2528;
+EndTime=2530;
 
 %Time check statements
 if AnnealStartTime>EndTime
@@ -66,8 +66,9 @@ header4 = 'Normalized Laser Deconvolved Photovoltage';
 header5 = 'Exponential Normalized Deconvolved Photovoltage';
 header6 = 'Temperature (°C)';
 header7 = 'Setpoint (°C)';
-header8 = 'Heater Power (%)';
+header8 = 'Heater Power (%%)';
 header9 = 'Germane Start Time (relative s)';
+
 
 %% Import data from text file.
 addpath(genpath('E:\Michael\Stanford\Research\Data\Interferometry'))
@@ -76,44 +77,10 @@ cd 'E:\Michael\Stanford\Research\Data\Interferometry'
 %cd 'C:\Spectre Working Folder\Interferometry'
 [interferomfilename, folderpath] = uigetfile('*.txt;*.dat');
 cd(folderpath)
-interferomMatrix=importdata(interferomfilename);
 [~, interferomfilename_only, ~]=fileparts(interferomfilename);
-datamatrix=interferomMatrix.data;
 
-if size(datamatrix,2)==6;
-    Times = datamatrix(:, 1);
-    SamplePhotovoltageVtemp = datamatrix(:, 2);
-    SampleStandardDeviationVtemp = datamatrix(:, 3);
-    ReferencePhotovoltageVtemp = datamatrix(:, 4);
-    ReferenceStandardDeviationVtemp = datamatrix(:, 5);
-    Numberofmeasurementstemp = datamatrix(:, 6);
-elseif size(datamatrix,2)==7;
-    Times = datamatrix(:, 1);
-    SamplePhotovoltageVtemp = datamatrix(:, 2);
-    SampleStandardDeviationVtemp = datamatrix(:, 3);
-    ReferencePhotovoltageVtemp = datamatrix(:, 4);
-    ReferenceStandardDeviationVtemp = datamatrix(:, 5);
-    Numberofmeasurementstemp = datamatrix(:, 6);
-    Timestamp = datamatrix(:, 7);
-elseif size(datamatrix,2)==10;
-    Times = datamatrix(:, 1);
-    Temperaturetemp = datamatrix(:, 2);
-    Setpointtemp = datamatrix(:, 3);
-    HeaterPowertemp = datamatrix(:, 4);
-    StepTimes = datamatrix(:, 5);
-    SamplePhotovoltageVtemp = datamatrix(:, 6);
-    SampleStandardDeviationVtemp = datamatrix(:, 7);
-    ReferencePhotovoltageVtemp = datamatrix(:, 8);
-    ReferenceStandardDeviationVtemp = datamatrix(:, 9);
-    Numberofmeasurementstemp = datamatrix(:, 10);
-else
-    fprintf('Check the number of data columns and modify the code accordingly\n')
-    return
-end
+[Times,Temperaturetemp,Setpointtemp,HeaterPowertemp,StepTimes,SamplePhotovoltageVtemp,SampleStandardDeviationVtemp,ReferencePhotovoltageVtemp,ReferenceStandardDeviationVtemp,~,Numberofmeasurementstemp,Timestamp] = ImportFunction(interferomfilename);
 
-
-%% Clear temporary variables
-clearvars filename delimiter startRow formatSpec fileID dataArray ans;
 
 %% Full Graph
 
@@ -123,12 +90,11 @@ SampleStandardDeviationV = SampleStandardDeviationVtemp(Times>AnnealStartTime & 
 ReferencePhotovoltageV = ReferencePhotovoltageVtemp(Times>AnnealStartTime & Times<EndTime);
 ReferenceStandardDeviationV = ReferenceStandardDeviationVtemp(Times>AnnealStartTime & Times<EndTime);
 Numberofmeasurements = Numberofmeasurementstemp(Times>AnnealStartTime & Times<EndTime);
-if size(datamatrix,2)==10;
-    Temperature = Temperaturetemp(Times>AnnealStartTime & Times<EndTime);
-    Setpoint = Setpointtemp(Times>AnnealStartTime & Times<EndTime);
-    HeaterPower = HeaterPowertemp(Times>AnnealStartTime & Times<EndTime);
-    CutStepTimes = StepTimes(Times>AnnealStartTime & Times<EndTime);
-end
+Temperature = Temperaturetemp(Times>AnnealStartTime & Times<EndTime);
+Setpoint = Setpointtemp(Times>AnnealStartTime & Times<EndTime);
+HeaterPower = HeaterPowertemp(Times>AnnealStartTime & Times<EndTime);
+CutStepTimes = StepTimes(Times>AnnealStartTime & Times<EndTime);
+
 
 t=CutTimes-CutTimes(1);
 FullGermaneTime=(GermaneTime-CutTimes(1)).*ones(size(t));
@@ -175,12 +141,10 @@ if GrowthSplit==1;
     AnnealReferencePhotovoltageV = ReferencePhotovoltageVtemp(Times>AnnealStartTime & Times<CoolingStartTime);
     AnnealReferenceStandardDeviationV = ReferenceStandardDeviationVtemp(Times>AnnealStartTime & Times<CoolingStartTime);
     AnnealNumberofmeasurements = Numberofmeasurementstemp(Times>AnnealStartTime & Times<CoolingStartTime);
-    if size(datamatrix,2)==10;
-        AnnealTemperature = Temperaturetemp(Times>AnnealStartTime & Times<CoolingStartTime);
-        AnnealSetpoint = Setpointtemp(Times>AnnealStartTime & Times<CoolingStartTime);
-        AnnealHeaterPower = HeaterPowertemp(Times>AnnealStartTime & Times<CoolingStartTime);
-        AnnealCutStepTimes = StepTimes(Times>AnnealStartTime & Times<CoolingStartTime);
-    end
+    AnnealTemperature = Temperaturetemp(Times>AnnealStartTime & Times<CoolingStartTime);
+    AnnealSetpoint = Setpointtemp(Times>AnnealStartTime & Times<CoolingStartTime);
+    AnnealHeaterPower = HeaterPowertemp(Times>AnnealStartTime & Times<CoolingStartTime);
+    AnnealCutStepTimes = StepTimes(Times>AnnealStartTime & Times<CoolingStartTime);
     
     
     Annealt=AnnealCutTimes-AnnealCutTimes(1);
@@ -228,12 +192,10 @@ if GrowthSplit==1;
     CoolingReferencePhotovoltageV = ReferencePhotovoltageVtemp(Times>CoolingStartTime & Times<GrowthStartTime);
     CoolingReferenceStandardDeviationV = ReferenceStandardDeviationVtemp(Times>CoolingStartTime & Times<GrowthStartTime);
     CoolingNumberofmeasurements = Numberofmeasurementstemp(Times>CoolingStartTime & Times<GrowthStartTime);
-    if size(datamatrix,2)==10;
-        CoolingTemperature = Temperaturetemp(Times>CoolingStartTime & Times<GrowthStartTime);
-        CoolingSetpoint = Setpointtemp(Times>CoolingStartTime & Times<GrowthStartTime);
-        CoolingHeaterPower = HeaterPowertemp(Times>CoolingStartTime & Times<GrowthStartTime);
-        CoolingCutStepTimes = StepTimes(Times>CoolingStartTime & Times<GrowthStartTime);
-    end
+    CoolingTemperature = Temperaturetemp(Times>CoolingStartTime & Times<GrowthStartTime);
+    CoolingSetpoint = Setpointtemp(Times>CoolingStartTime & Times<GrowthStartTime);
+    CoolingHeaterPower = HeaterPowertemp(Times>CoolingStartTime & Times<GrowthStartTime);
+    CoolingCutStepTimes = StepTimes(Times>CoolingStartTime & Times<GrowthStartTime);
     
     Coolingt=CoolingCutTimes-CoolingCutTimes(1);
     CoolingR=CoolingReferencePhotovoltageV;
@@ -263,12 +225,11 @@ if GrowthSplit==1;
     GrowthReferencePhotovoltageV = ReferencePhotovoltageVtemp(Times>GrowthStartTime & Times<EndTime);
     GrowthReferenceStandardDeviationV = ReferenceStandardDeviationVtemp(Times>GrowthStartTime & Times<EndTime);
     GrowthNumberofmeasurements = Numberofmeasurementstemp(Times>GrowthStartTime & Times<EndTime);
-    if size(datamatrix,2)==10;
-        GrowthTemperature = Temperaturetemp(Times>GrowthStartTime & Times<EndTime);
-        GrowthSetpoint = Setpointtemp(Times>GrowthStartTime & Times<EndTime);
-        GrowthHeaterPower = HeaterPowertemp(Times>GrowthStartTime & Times<EndTime);
-        GrowthCutStepTimes = StepTimes(Times>GrowthStartTime & Times<EndTime);
-    end
+    GrowthTemperature = Temperaturetemp(Times>GrowthStartTime & Times<EndTime);
+    GrowthSetpoint = Setpointtemp(Times>GrowthStartTime & Times<EndTime);
+    GrowthHeaterPower = HeaterPowertemp(Times>GrowthStartTime & Times<EndTime);
+    GrowthCutStepTimes = StepTimes(Times>GrowthStartTime & Times<EndTime);
+
     
     Growtht=GrowthCutTimes-GrowthCutTimes(1);
     GrowthR=GrowthReferencePhotovoltageV;
@@ -328,6 +289,9 @@ end
 %Save file
 if Save_file==0
 else
+    samplefolderpath = strcat(folderpath,interferomfilename_only,'_Processed');
+    mkdir(samplefolderpath)
+    cd(samplefolderpath)
     fullfilename=strcat(interferomfilename_only,'_full.txt');
     delete(fullfilename)
     
@@ -335,60 +299,42 @@ else
         Annealingfilename=strcat(interferomfilename_only,'_annealing.txt');
         Coolingfilename=strcat(interferomfilename_only,'_cooling.txt');
         Growthfilename=strcat(interferomfilename_only,'_growth.txt');
+        Paramfilename=strcat(interferomfilename_only,'_timeparameters.txt');
         
         
         delete(Annealingfilename)
         delete(Coolingfilename)
         delete(Growthfilename)
+        delete(Paramfilename)
     end
     
-    if size(datamatrix,2)==6;
-        fid=fopen(fullfilename,'wt');
-        fprintf(fid, [ header1 '\t' header2 '\t' header3 '\t' header4 '\t' header9 '\r\n']);
-        fprintf(fid, '%f\t%f\t%f\t%f\t%f\r\n', [t S deconv norm FullGermaneTime]');
-        fclose(fid);true
-        
-        if GrowthSplit==1;
-            fid=fopen(Annealingfilename,'wt');
-            fprintf(fid, [ header1 '\t' header2 '\t' header3 '\t' header4 '\t' header9 '\r\n']);
-            fprintf(fid, '%f\t%f\t%f\t%f\t%f\r\n', [Annealt AnnealS Annealdeconv Annealnorm AnnealGermaneTime]');
-            fclose(fid);true
-            
-            fid=fopen(Coolingfilename,'wt');
-            fprintf(fid, [ header1 '\t' header2 '\t' header3 '\t' header4 '\r\n']);
-            fprintf(fid, '%f\t%f\t%f\t%f\r\n', [Coolingt CoolingS Coolingdeconv Coolingnorm]');
-            fclose(fid);true
-            
-            fid=fopen(Growthfilename,'wt');
-            fprintf(fid, [ header1 '\t' header2 '\t' header3 '\t' header4 '\t' header5 '\r\n']);
-            fprintf(fid, '%f\t%f\t%f\t%f\t%f\r\n', [Growtht GrowthS Growthdeconv Growthnorm Growthdiv]');
-            fclose(fid);true
-        end
-    elseif size(datamatrix,2)==10;
-        fid=fopen(fullfilename,'wt');
+
+    fid=fopen(fullfilename,'wt');
+    fprintf(fid, [ header1 '\t' header2 '\t' header3 '\t' header4 '\t' header6 '\t' header7 '\t' header8 '\t' header9 '\r\n']);
+    fprintf(fid, '%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\r\n', [t S deconv norm Temperature Setpoint HeaterPower FullGermaneTime]');
+    fclose(fid);true;
+    
+    fid=fopen(Paramfilename,'wt');
+    fprintf(fid, [ 'AnnealStartTime' '\t' 'GermaneTime' '\t' 'CoolingStartTime' '\t' 'GrowthStartTime' '\t' 'EndTime' '\r\n']);
+    fprintf(fid, '%f.0\t%f.0\t%f.0\t%f.0\t%f.0\r\n', [AnnealStartTime GermaneTime CoolingStartTime GrowthStartTime EndTime]');
+    fclose(fid);true;
+
+
+    if GrowthSplit==1;
+        fid=fopen(Annealingfilename,'wt');
         fprintf(fid, [ header1 '\t' header2 '\t' header3 '\t' header4 '\t' header6 '\t' header7 '\t' header8 '\t' header9 '\r\n']);
-        fprintf(fid, '%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\r\n', [t S deconv norm Temperature Setpoint HeaterPower FullGermaneTime]');
-        fclose(fid);true
-        
-        if GrowthSplit==1;
-            fid=fopen(Annealingfilename,'wt');
-            fprintf(fid, [ header1 '\t' header2 '\t' header3 '\t' header4 '\t' header6 '\t' header7 '\t' header8 '\t' header9 '\r\n']);
-            fprintf(fid, '%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\r\n', [Annealt AnnealS Annealdeconv Annealnorm AnnealTemperature AnnealSetpoint AnnealHeaterPower AnnealGermaneTime]');
-            fclose(fid);true
-            
-            fid=fopen(Coolingfilename,'wt');
-            fprintf(fid, [ header1 '\t' header2 '\t' header3 '\t' header4 '\t' header6 '\t' header7 '\t' header8 '\r\n']);
-            fprintf(fid, '%f\t%f\t%f\t%f\t%f\t%f\t%f\r\n', [Coolingt CoolingS Coolingdeconv Coolingnorm CoolingTemperature CoolingSetpoint CoolingHeaterPower]');
-            fclose(fid);true
-            
-            fid=fopen(Growthfilename,'wt');
-            fprintf(fid, [ header1 '\t' header2 '\t' header3 '\t' header4 '\t' header5 '\t' header6 '\t' header7 '\t' header8 '\r\n']);
-            fprintf(fid, '%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\r\n', [Growtht GrowthS Growthdeconv Growthnorm Growthdiv GrowthTemperature GrowthSetpoint GrowthHeaterPower]');
-            fclose(fid);true
-        end
-    else
-        fprintf('Remember to modify the file output code as well for different number/order of data columns!\n')
-        return
+        fprintf(fid, '%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\r\n', [Annealt AnnealS Annealdeconv Annealnorm AnnealTemperature AnnealSetpoint AnnealHeaterPower AnnealGermaneTime]');
+        fclose(fid);true;
+
+        fid=fopen(Coolingfilename,'wt');
+        fprintf(fid, [ header1 '\t' header2 '\t' header3 '\t' header4 '\t' header6 '\t' header7 '\t' header8 '\r\n']);
+        fprintf(fid, '%f\t%f\t%f\t%f\t%f\t%f\t%f\r\n', [Coolingt CoolingS Coolingdeconv Coolingnorm CoolingTemperature CoolingSetpoint CoolingHeaterPower]');
+        fclose(fid);true;
+
+        fid=fopen(Growthfilename,'wt');
+        fprintf(fid, [ header1 '\t' header2 '\t' header3 '\t' header4 '\t' header5 '\t' header6 '\t' header7 '\t' header8 '\r\n']);
+        fprintf(fid, '%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\r\n', [Growtht GrowthS Growthdeconv Growthnorm Growthdiv GrowthTemperature GrowthSetpoint GrowthHeaterPower]');
+        fclose(fid);true;
     end
-    
+    cd(folderpath)
 end
