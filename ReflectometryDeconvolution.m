@@ -101,11 +101,10 @@ header9 = 'Germane Start Time (relative s)';
 
 
 %% Import data from text file.
-addpath(genpath('E:\Michael\Stanford\Research\Data\Reflectometry'))
-cd 'E:\Michael\Stanford\Research\Data\Reflectometry'
-%addpath(genpath('C:\Spectre Working Folder\Reflectometry'))
-%cd 'C:\Spectre Working Folder\Reflectometry'
+
+
 [reflectomfilename, folderpath] = uigetfile('*.txt;*.dat');
+addpath(genpath(folderpath))
 cd(folderpath)
 [~, reflectomfilename_only, ~]=fileparts(reflectomfilename);
 clc;
