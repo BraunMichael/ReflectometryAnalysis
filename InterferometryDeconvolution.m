@@ -1,73 +1,96 @@
+
 %% Interferometry Deconvolution
 %Michael Braun
 
-clear; close all; clc; format shortG; warning('off','all')
+clear; close all; format shortG; warning('off','all')
 set(0,'defaultaxesfontname','arial')
 set(0,'DefaultAxesFontSize',24)
 
-%Save new text files? (0 no, 1 yes)
-Save_file=0;
+%Save new text files? (0 no, 1 yes, true false also works)
+Save_file = true;
 
-%Normal Growth splits? (0 for a constant temperature/step file, 1 for
-%normal growth) 
-%Basically only does laser deconvolution and normalization of file
-%Only uses Anneal StartTime and EndTime if 0
-GrowthSplit=1;
+%Load from saved .mat file? (0 no, 1 yes)
+Load_mat = true;
 
 %Show annealing/cooling graphs? (0 for no, 1 for yes)
-AnnealCoolGraphShow = 0;
+AnnealCoolGraphShow = false;
 
 %Show intermediate graphs? (0 for no, 1 for yes)
-%Hides everything that show annealing/cooling hides as well
-IntermediateShow = 1;
+IntermediateShow = false;
 
-%Start of anneal/seeding time in original seconds
-AnnealStartTime=69;
+%Update smoothing factors? (0 for no, 1 for yes)
+Update_smooth = false;
 
-%GeH4 on time, only records in file, doesn't split
-GermaneTime=309;
-
-%Start of cooling time in original seconds
-CoolingStartTime=669.5;
-
-%Start of steady state growth time in original seconds
-GrowthStartTime=730;
-
-%End time in original seconds
-EndTime=2530;
-
-%Time check statements
-if AnnealStartTime>EndTime
-    fprintf('Annealing start time must be before end time! Fix and try again\n')
-    return
-end
-if GrowthSplit==1;
-    if AnnealStartTime>CoolingStartTime
-        fprintf('Annealing start time must be before cooling start time! Fix and try again\n')
-        return
-    end
-    if AnnealStartTime>GrowthStartTime
-        fprintf('Annealing start time must be before growth start time! Fix and try again\n')
-        return
-    end
+if Update_smooth
+    %Growth Loess Smoothing factor
+    temp_Growth_loess = 0.03;
     
-    if CoolingStartTime>GrowthStartTime
-        fprintf('Cooling start time must be before growth start time! Fix and try again\n')
+    %Derivative Loess Smoothing factor
+    temp_Derivative_loess = 0.03;
+end
+
+if ~Load_mat
+    %Normal Growth splits? (0 for a constant temperature/step file, 1 for
+    %normal growth)
+    %Basically only does laser deconvolution and normalization of file
+    %Only uses Anneal StartTime and EndTime if 0
+    GrowthSplit = 1;
+    
+    %Growth Loess Smoothing factor
+    Growth_loess = 0.07;
+    
+    %Derivative Loess Smoothing factor
+    Derivative_loess = 0.07;
+    
+    %Start of anneal/seeding time in original seconds
+    AnnealStartTime = 70.8;
+    
+    %GeH4 on time, only records in file, doesn't split
+    GermaneTime = 310.8;
+    
+    %Start of cooling time in original seconds
+    CoolingStartTime = 551.2;
+    
+    %Start of steady state growth time in original seconds
+    GrowthStartTime = 611.5;
+    
+    %End time in original seconds
+    EndTime = 2411;
+    
+    %Time check statements
+    if AnnealStartTime>EndTime
+        fprintf('Annealing start time must be before end time! Fix and try again\n')
         return
     end
-    if CoolingStartTime>EndTime
-        fprintf('Cooling start time must be before end time! Fix and try again\n')
-        return
-    end
-    if GrowthStartTime>EndTime
-        fprintf('Growth start time must be before end time! Fix and try again\n')
-        return
+    if GrowthSplit==1;
+        if AnnealStartTime>CoolingStartTime
+            fprintf('Annealing start time must be before cooling start time! Fix and try again\n')
+            return
+        end
+        if AnnealStartTime>GrowthStartTime
+            fprintf('Annealing start time must be before growth start time! Fix and try again\n')
+            return
+        end
+        
+        if CoolingStartTime>GrowthStartTime
+            fprintf('Cooling start time must be before growth start time! Fix and try again\n')
+            return
+        end
+        if CoolingStartTime>EndTime
+            fprintf('Cooling start time must be before end time! Fix and try again\n')
+            return
+        end
+        if GrowthStartTime>EndTime
+            fprintf('Growth start time must be before end time! Fix and try again\n')
+            return
+        end
     end
 end
 
 %File Headers
 header1 = 'Time (s)';
 header2 = 'Raw Photovoltage (V)';
+headerlaser = 'Laser Photovoltage (V)';
 header3 = 'Laser Deconvolved Photovoltage (V)';
 header4 = 'Normalized Laser Deconvolved Photovoltage';
 header5 = 'Exponential Normalized Deconvolved Photovoltage';
@@ -78,14 +101,34 @@ header9 = 'Germane Start Time (relative s)';
 
 
 %% Import data from text file.
-addpath(genpath('E:\Michael\Stanford\Research\Data\Interferometry'))
-cd 'E:\Michael\Stanford\Research\Data\Interferometry'
+addpath(genpath('E:\Michael\Stanford\Research\Data\Reflectometry'))
+cd 'E:\Michael\Stanford\Research\Data\Reflectometry'
 %addpath(genpath('C:\Spectre Working Folder\Reflectometry'))
 %cd 'C:\Spectre Working Folder\Reflectometry'
 [interferomfilename, folderpath] = uigetfile('*.txt;*.dat');
 cd(folderpath)
 [~, interferomfilename_only, ~]=fileparts(interferomfilename);
+clc;
 fprintf('Working on %s\n', interferomfilename_only);
+matfilename = strcat(interferomfilename_only, '.mat');
+if Load_mat
+    if ~exist(matfilename, 'file') == 2
+        errorMessage = sprintf('Error: The following folder does not exist:\n%s', folderpath);
+        uiwait(warndlg(errorMessage));
+        return;
+    end
+    load(matfilename)
+end
+
+
+if Update_smooth
+    %Growth Loess Smoothing factor
+    Growth_loess = temp_Growth_loess;
+    
+    %Derivative Loess Smoothing factor
+    Derivative_loess = temp_Derivative_loess;
+end
+
 [Times,Temperaturetemp,Setpointtemp,HeaterPowertemp,StepTimes,SamplePhotovoltageVtemp,SampleStandardDeviationVtemp,ReferencePhotovoltageVtemp,ReferenceStandardDeviationVtemp,~,Numberofmeasurementstemp,Timestamp] = ImportFunction(interferomfilename);
 
 
@@ -182,8 +225,8 @@ if GrowthSplit==1;
         title('Annealing and Seeding Normalized Interferometry Laser Deconvolution','Interpreter','latex')
         xlabel('Time (s)','Interpreter','latex')
         axis([0 inf -inf inf])
-
-
+        
+        
         figure()
         yyaxis left
         plot(Annealt,AnnealS,'k')
@@ -247,7 +290,7 @@ if GrowthSplit==1;
     GrowthSetpoint = Setpointtemp(Times>GrowthStartTime & Times<EndTime);
     GrowthHeaterPower = HeaterPowertemp(Times>GrowthStartTime & Times<EndTime);
     GrowthCutStepTimes = StepTimes(Times>GrowthStartTime & Times<EndTime);
-
+    
     
     Growtht=GrowthCutTimes-GrowthCutTimes(1);
     GrowthR=GrowthReferencePhotovoltageV;
@@ -280,6 +323,9 @@ if GrowthSplit==1;
     c=Growthf_coeff(3);
     d=Growthf_coeff(4);
     
+    %Save .mat file
+    save(matfilename, 'GrowthSplit', 'AnnealStartTime', 'GermaneTime', 'CoolingStartTime', 'GrowthStartTime', 'EndTime', 'Growth_loess', 'Derivative_loess', 'a', 'b', 'c', 'd')
+    
     Growthexpfit = @(x) a.*exp(b.*x)+c.*exp(d.*x);
     Growthf_values=Growthexpfit(Growtht);
     
@@ -309,10 +355,10 @@ if GrowthSplit==1;
         axis([0 inf -inf inf])
     end
     
-    Growth_smoothed = smooth(Growtht,Growthdiv,0.05,'rloess');
+    Growth_smoothed = smooth(Growtht,Growthdiv,Growth_loess,'rloess');
     Deriv1_Growth_smoothed = nderiv_fornberg(1, Growtht, Growth_smoothed);
     Deriv2_Growth_smoothed = nderiv_fornberg(2, Growtht, Growth_smoothed);
-    Deriv2_Growth_doublesmoothed = smooth(Growtht,Deriv2_Growth_smoothed,0.05,'rloess');
+    Deriv2_Growth_doublesmoothed = smooth(Growtht,Deriv2_Growth_smoothed,Derivative_loess,'rloess');
     [zeros_1stderiv_indices, zeros_1stderiv_xvalues] = NumericalRootsFunction(Growtht, Deriv1_Growth_smoothed);
     [zeros_2ndderiv_indices, zeros_2ndderiv_xvalues] = NumericalRootsFunction(Growtht, Deriv2_Growth_doublesmoothed);
     zeros_xindices = sort([zeros_1stderiv_indices, zeros_2ndderiv_indices]);
@@ -322,19 +368,19 @@ if GrowthSplit==1;
     zeros_yvalues = Growthdiv(zeros_xindices);
     
     if IntermediateShow
-    figure()
-    plot(Growtht,Growth_smoothed-1,'k',Growtht,Deriv1_Growth_smoothed,'r',Growtht,Deriv2_Growth_smoothed,'b')
-    title('Growth Interferometry Deconvolved Exponential Division Smoothed Derivatives','Interpreter','latex')
-    xlabel('Time (s)','Interpreter','latex')
-    ylabel('Signal (Volts)','Interpreter','latex')
-    axis([0 inf -inf inf])
-    
-    figure()
-    plot(Growtht,Deriv2_Growth_doublesmoothed,'k',Growtht,Deriv2_Growth_smoothed,'b')
-    title('Growth Interferometry Deconvolved Exponential Division Smoothed Derivatives','Interpreter','latex')
-    xlabel('Time (s)','Interpreter','latex')
-    ylabel('Signal (Volts)','Interpreter','latex')
-    axis([0 inf -inf inf])
+        figure()
+        plot(Growtht,Growth_smoothed-1,'k',Growtht,Deriv1_Growth_smoothed,'r',Growtht,Deriv2_Growth_smoothed,'b')
+        title('Growth Interferometry Deconvolved Exponential Division Smoothed Derivatives','Interpreter','latex')
+        xlabel('Time (s)','Interpreter','latex')
+        ylabel('Signal (Volts)','Interpreter','latex')
+        axis([0 inf -inf inf])
+        
+        figure()
+        plot(Growtht,Deriv2_Growth_doublesmoothed,'k',Growtht,Deriv2_Growth_smoothed,'b')
+        title('Growth Interferometry Deconvolved Exponential Division Smoothed Derivatives','Interpreter','latex')
+        xlabel('Time (s)','Interpreter','latex')
+        ylabel('Signal (Volts)','Interpreter','latex')
+        axis([0 inf -inf inf])
     end
     
     figure()
@@ -343,7 +389,7 @@ if GrowthSplit==1;
     xlabel('Time (s)','Interpreter','latex')
     ylabel('Signal (Volts)','Interpreter','latex')
     axis([0 inf -inf inf])
-      
+    
     length_segments = (1:max(size(zeros_xvalues)));
     %segmentoffset = ((length_segments(2)*zeros_xvalues(1) - zeros_xvalues(2)*length_segments(1))/(zeros_xvalues(2)-zeros_xvalues(1)));
     segmentoffset = ((length_segments(2)*zeros_xvalues_exact(1) - zeros_xvalues_exact(2)*length_segments(1))/(zeros_xvalues_exact(2)-zeros_xvalues_exact(1)));
@@ -364,24 +410,28 @@ if GrowthSplit==1;
     ylabel('Growth Rate (arb units)','Interpreter','latex')
     axis([0 inf 0 inf])
     
-    zeros_xindices = sort([zeros_1stderiv_indices, zeros_2ndderiv_indices]);
-    peaks_yvalues = Growthdiv(zeros_1stderiv_indices);
-    [top, middle, bottom] = PeakIndiciesSplit(zeros_xindices, zeros_1stderiv_indices, zeros_2ndderiv_indices, peaks_yvalues);
-    Osc_middle_fit=polyfit(Growtht(middle),Growthdiv(middle),4);
-
-    Osc_cleaned=Growthdiv./polyval(Osc_middle_fit, Growtht);
-    figure()
-    plot(Growtht,Growthdiv,'k',Growtht,Osc_cleaned,'r')
-    title('Osciallation Cleaning','Interpreter','latex')
-    xlabel('Time (s)','Interpreter','latex')
-    ylabel('Signal (Volts)','Interpreter','latex')
-    axis([0 inf -inf inf])
+    %     zeros_xindices = sort([zeros_1stderiv_indices, zeros_2ndderiv_indices]);
+    %     peaks_yvalues = Growthdiv(zeros_1stderiv_indices);
+    %     [top, middle, bottom] = PeakIndiciesSplit(zeros_xindices, zeros_1stderiv_indices, zeros_2ndderiv_indices, peaks_yvalues);
+    %     Osc_middle_fit=polyfit(Growtht(middle),Growthdiv(middle),4);
+    %
+    %     Osc_cleaned=Growthdiv./polyval(Osc_middle_fit, Growtht);
+    %     figure()
+    %     plot(Growtht,Growthdiv,'k',Growtht,Osc_cleaned,'r')
+    %     title('Osciallation Cleaning','Interpreter','latex')
+    %     xlabel('Time (s)','Interpreter','latex')
+    %     ylabel('Signal (Volts)','Interpreter','latex')
+    %     axis([0 inf -inf inf])
     
     
     
-
-
+    
+    
 end
+
+
+
+
 %Save file
 if Save_file==0
 else
@@ -406,37 +456,36 @@ else
         delete(Processedfilename)
     end
     
-
+    
     fid=fopen(fullfilename,'wt');
-    fprintf(fid, [ header1 '\t' header2 '\t' header3 '\t' header4 '\t' header6 '\t' header7 '\t' header8 '\t' header9 '\r\n']);
-    fprintf(fid, '%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\r\n', [t S deconv norm Temperature Setpoint HeaterPower FullGermaneTime]');
+    fprintf(fid, [ header1 '\t' header2 '\t' headerlaser '\t' header3 '\t' header4 '\t' header6 '\t' header7 '\t' header8 '\t' header9 '\r\n']);
+    fprintf(fid, '%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\r\n', [t S R deconv norm Temperature Setpoint HeaterPower FullGermaneTime]');
     fclose(fid);true;
     
-    fid=fopen(Paramfilename,'wt');
-    fprintf(fid, [ 'AnnealStartTime' '\t' 'GermaneTime' '\t' 'CoolingStartTime' '\t' 'GrowthStartTime' '\t' 'EndTime' '\r\n']);
-    fprintf(fid, '%6.1f\t%6.1f\t%6.1f\t%6.1f\t%6.1f\r\n', [AnnealStartTime GermaneTime CoolingStartTime GrowthStartTime EndTime]');
-    fclose(fid);true;
     
-    fid=fopen(Processedfilename,'wt');
-    fprintf(fid, [ 'Steady State Growth Time (s)' '\t' 'Deconvolved Divided Signal' '\t'  'Length (arb units)' '\t' 'Growth Rate (arb units/s)' '\t' '\r\n']);
-    fprintf(fid, '%f\t%f\t%f\t%f\r\n', [zeros_xvalues_exact zeros_yvalues (length_segments+segmentoffset)' Growth_rate']');
-    fclose(fid);true;
-
-
     if GrowthSplit==1;
+        fid=fopen(Paramfilename,'wt');
+        fprintf(fid, [ 'AnnealStartTime' '\t' 'GermaneTime' '\t' 'CoolingStartTime' '\t' 'GrowthStartTime' '\t' 'EndTime' '\r\n']);
+        fprintf(fid, '%6.1f\t%6.1f\t%6.1f\t%6.1f\t%6.1f\r\n', [AnnealStartTime GermaneTime CoolingStartTime GrowthStartTime EndTime]');
+        fclose(fid);true;
+        
+        fid=fopen(Processedfilename,'wt');
+        fprintf(fid, [ 'Steady State Growth Time (s)' '\t' 'Deconvolved Divided Signal' '\t'  'Length (arb units)' '\t' 'Growth Rate (arb units/s)' '\t' '\r\n']);
+        fprintf(fid, '%f\t%f\t%f\t%f\r\n', [zeros_xvalues_exact zeros_yvalues (length_segments+segmentoffset)' Growth_rate']');
+        fclose(fid);true;
         fid=fopen(Annealingfilename,'wt');
-        fprintf(fid, [ header1 '\t' header2 '\t' header3 '\t' header4 '\t' header6 '\t' header7 '\t' header8 '\t' header9 '\r\n']);
-        fprintf(fid, '%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\r\n', [Annealt AnnealS Annealdeconv Annealnorm AnnealTemperature AnnealSetpoint AnnealHeaterPower AnnealGermaneTime]');
+        fprintf(fid, [ header1 '\t' header2 '\t' headerlaser '\t' header3 '\t' header4 '\t' header6 '\t' header7 '\t' header8 '\t' header9 '\r\n']);
+        fprintf(fid, '%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\r\n', [Annealt AnnealS AnnealR Annealdeconv Annealnorm AnnealTemperature AnnealSetpoint AnnealHeaterPower AnnealGermaneTime]');
         fclose(fid);true;
-
+        
         fid=fopen(Coolingfilename,'wt');
-        fprintf(fid, [ header1 '\t' header2 '\t' header3 '\t' header4 '\t' header6 '\t' header7 '\t' header8 '\r\n']);
-        fprintf(fid, '%f\t%f\t%f\t%f\t%f\t%f\t%f\r\n', [Coolingt CoolingS Coolingdeconv Coolingnorm CoolingTemperature CoolingSetpoint CoolingHeaterPower]');
+        fprintf(fid, [ header1 '\t' header2 '\t' headerlaser '\t' header3 '\t' header4 '\t' header6 '\t' header7 '\t' header8 '\r\n']);
+        fprintf(fid, '%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\r\n', [Coolingt CoolingS CoolingR Coolingdeconv Coolingnorm CoolingTemperature CoolingSetpoint CoolingHeaterPower]');
         fclose(fid);true;
-
+        
         fid=fopen(Growthfilename,'wt');
-        fprintf(fid, [ header1 '\t' header2 '\t' header3 '\t' header4 '\t' header5 '\t' header6 '\t' header7 '\t' header8 '\r\n']);
-        fprintf(fid, '%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\r\n', [Growtht GrowthS Growthdeconv Growthnorm Growthdiv GrowthTemperature GrowthSetpoint GrowthHeaterPower]');
+        fprintf(fid, [ header1 '\t' header2 '\t' headerlaser '\t' header3 '\t' header4 '\t' header5 '\t' 'Smoothed ExpNormDecon Signal' '\t' '1st Derivative of Smoothed' '\t' '2nd Derivative of Smoothed' '\t' 'Smoothed 2nd Derivative of Smoothed' '\t' header6 '\t' header7 '\t' header8 '\r\n']);
+        fprintf(fid, '%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\r\n', [Growtht GrowthS GrowthR Growthdeconv Growthnorm Growthdiv Growth_smoothed Deriv1_Growth_smoothed Deriv2_Growth_smoothed Deriv2_Growth_doublesmoothed GrowthTemperature GrowthSetpoint GrowthHeaterPower]');
         fclose(fid);true;
     end
     cd(folderpath)
