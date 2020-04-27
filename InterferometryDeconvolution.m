@@ -6,13 +6,20 @@ set(0,'defaultaxesfontname','arial')
 set(0,'DefaultAxesFontSize',24)
 
 %Save new text files? (0 no, 1 yes)
-Save_file=1;
+Save_file=0;
 
 %Normal Growth splits? (0 for a constant temperature/step file, 1 for
 %normal growth) 
 %Basically only does laser deconvolution and normalization of file
 %Only uses Anneal StartTime and EndTime if 0
 GrowthSplit=1;
+
+%Show annealing/cooling graphs? (0 for no, 1 for yes)
+AnnealCoolGraphShow = 0;
+
+%Show intermediate graphs? (0 for no, 1 for yes)
+%Hides everything that show annealing/cooling hides as well
+IntermediateShow = 1;
 
 %Start of anneal/seeding time in original seconds
 AnnealStartTime=69;
@@ -73,12 +80,12 @@ header9 = 'Germane Start Time (relative s)';
 %% Import data from text file.
 addpath(genpath('E:\Michael\Stanford\Research\Data\Interferometry'))
 cd 'E:\Michael\Stanford\Research\Data\Interferometry'
-%addpath(genpath('C:\Spectre Working Folder\Interferometry'))
-%cd 'C:\Spectre Working Folder\Interferometry'
+%addpath(genpath('C:\Spectre Working Folder\Reflectometry'))
+%cd 'C:\Spectre Working Folder\Reflectometry'
 [interferomfilename, folderpath] = uigetfile('*.txt;*.dat');
 cd(folderpath)
 [~, interferomfilename_only, ~]=fileparts(interferomfilename);
-
+fprintf('Working on %s\n', interferomfilename_only);
 [Times,Temperaturetemp,Setpointtemp,HeaterPowertemp,StepTimes,SamplePhotovoltageVtemp,SampleStandardDeviationVtemp,ReferencePhotovoltageVtemp,ReferenceStandardDeviationVtemp,~,Numberofmeasurementstemp,Timestamp] = ImportFunction(interferomfilename);
 
 
@@ -102,36 +109,41 @@ R=ReferencePhotovoltageV;
 S=SamplePhotovoltageV;
 
 deconv=(S./R).*mean(R);
-figure()
-plot(t,deconv,'k')
-ylabel('Signal (arb units)','Interpreter','latex')
-title('Interferometry Laser Deconvolution','Interpreter','latex')
-xlabel('Time (s)','Interpreter','latex')
-axis([0 inf -inf inf])
+if IntermediateShow == 1
+    figure()
+    plot(t,deconv,'k')
+    ylabel('Signal (arb units)','Interpreter','latex')
+    title('Interferometry Laser Deconvolution','Interpreter','latex')
+    xlabel('Time (s)','Interpreter','latex')
+    axis([0 inf -inf inf])
+end
 
 norm=deconv./max(deconv);
-figure()
-plot(t,norm,'k')
-ylabel('Signal (arb units)','Interpreter','latex')
-title('Normalized Interferometry Laser Deconvolution','Interpreter','latex')
-xlabel('Time (s)','Interpreter','latex')
-axis([0 inf -inf inf])
+if IntermediateShow == 1
+    figure()
+    plot(t,norm,'k')
+    ylabel('Signal (arb units)','Interpreter','latex')
+    title('Normalized Interferometry Laser Deconvolution','Interpreter','latex')
+    xlabel('Time (s)','Interpreter','latex')
+    axis([0 inf -inf inf])
+end
 
-
-figure()
-yyaxis left
-plot(t,S,'k')
-ylabel('Sample Signal (Volts)','Interpreter','latex')
-yyaxis right
-plot(t,R,'b')
-title('Raw Interferometry Data','Interpreter','latex')
-xlabel('Time (s)','Interpreter','latex')
-ylabel('Reference Signal (Volts)','Interpreter','latex')
-ax = gca;
-ax.YAxis(1).Color = 'k';
-ax.YAxis(2).Color = 'b';
-legend('Sample','Reference','Location','Best')
-axis([0 inf -inf inf])
+if IntermediateShow == 1
+    figure()
+    yyaxis left
+    plot(t,S,'k')
+    ylabel('Sample Signal (Volts)','Interpreter','latex')
+    yyaxis right
+    plot(t,R,'b')
+    title('Raw Interferometry Data','Interpreter','latex')
+    xlabel('Time (s)','Interpreter','latex')
+    ylabel('Reference Signal (Volts)','Interpreter','latex')
+    ax = gca;
+    ax.YAxis(1).Color = 'k';
+    ax.YAxis(2).Color = 'b';
+    legend('Sample','Reference','Location','Best')
+    axis([0 inf -inf inf])
+end
 
 if GrowthSplit==1;
     %% Annealing and Seeding Section
@@ -153,37 +165,40 @@ if GrowthSplit==1;
     AnnealS=AnnealSamplePhotovoltageV;
     
     Annealdeconv=(AnnealS./AnnealR).*mean(AnnealR);
-    figure()
-    plot(Annealt,Annealdeconv,'k')
-    ylabel('Signal (arb units)','Interpreter','latex')
-    title('Annealing and Seeding Interferometry Laser Deconvolution','Interpreter','latex')
-    xlabel('Time (s)','Interpreter','latex')
-    axis([0 inf -inf inf])
+    if AnnealCoolGraphShow && IntermediateShow
+        figure()
+        plot(Annealt,Annealdeconv,'k')
+        ylabel('Signal (arb units)','Interpreter','latex')
+        title('Annealing and Seeding Interferometry Laser Deconvolution','Interpreter','latex')
+        xlabel('Time (s)','Interpreter','latex')
+        axis([0 inf -inf inf])
+    end
     
     Annealnorm=Annealdeconv./max(Annealdeconv);
-    figure()
-    plot(Annealt,Annealnorm,'k')
-    ylabel('Signal (arb units)','Interpreter','latex')
-    title('Annealing and Seeding Normalized Interferometry Laser Deconvolution','Interpreter','latex')
-    xlabel('Time (s)','Interpreter','latex')
-    axis([0 inf -inf inf])
-    
-    
-    figure()
-    yyaxis left
-    plot(Annealt,AnnealS,'k')
-    ylabel('Sample Signal (Volts)','Interpreter','latex')
-    yyaxis right
-    plot(Annealt,AnnealR,'b')
-    title('Annealing and Seeding Raw Interferometry Data','Interpreter','latex')
-    xlabel('Time (s)','Interpreter','latex')
-    ylabel('Reference Signal (Volts)','Interpreter','latex')
-    ax = gca;
-    ax.YAxis(1).Color = 'k';
-    ax.YAxis(2).Color = 'b';
-    legend('Sample','Reference','Location','Best')
-    axis([0 inf -inf inf])
-    
+    if AnnealCoolGraphShow && IntermediateShow
+        figure()
+        plot(Annealt,Annealnorm,'k')
+        ylabel('Signal (arb units)','Interpreter','latex')
+        title('Annealing and Seeding Normalized Interferometry Laser Deconvolution','Interpreter','latex')
+        xlabel('Time (s)','Interpreter','latex')
+        axis([0 inf -inf inf])
+
+
+        figure()
+        yyaxis left
+        plot(Annealt,AnnealS,'k')
+        ylabel('Sample Signal (Volts)','Interpreter','latex')
+        yyaxis right
+        plot(Annealt,AnnealR,'b')
+        title('Annealing and Seeding Raw Interferometry Data','Interpreter','latex')
+        xlabel('Time (s)','Interpreter','latex')
+        ylabel('Reference Signal (Volts)','Interpreter','latex')
+        ax = gca;
+        ax.YAxis(1).Color = 'k';
+        ax.YAxis(2).Color = 'b';
+        legend('Sample','Reference','Location','Best')
+        axis([0 inf -inf inf])
+    end
     
     %% Cooling Section
     CoolingCutTimes=Times(Times>CoolingStartTime & Times<GrowthStartTime);
@@ -202,21 +217,24 @@ if GrowthSplit==1;
     CoolingS=CoolingSamplePhotovoltageV;
     
     Coolingdeconv=(CoolingS./CoolingR).*mean(CoolingR);
-    figure()
-    plot(Coolingt,Coolingdeconv,'k')
-    ylabel('Signal (arb units)','Interpreter','latex')
-    title('Cooling Interferometry Laser Deconvolution','Interpreter','latex')
-    xlabel('Time (s)','Interpreter','latex')
-    axis([0 inf -inf inf])
+    if AnnealCoolGraphShow && IntermediateShow
+        figure()
+        plot(Coolingt,Coolingdeconv,'k')
+        ylabel('Signal (arb units)','Interpreter','latex')
+        title('Cooling Interferometry Laser Deconvolution','Interpreter','latex')
+        xlabel('Time (s)','Interpreter','latex')
+        axis([0 inf -inf inf])
+    end
     
     Coolingnorm=Coolingdeconv./max(Coolingdeconv);
-    figure()
-    plot(Coolingt,Coolingnorm,'k')
-    ylabel('Signal (arb units)','Interpreter','latex')
-    title('Cooling Normalized Interferometry Laser Deconvolution','Interpreter','latex')
-    xlabel('Time (s)','Interpreter','latex')
-    axis([0 inf -inf inf])
-    
+    if AnnealCoolGraphShow && IntermediateShow
+        figure()
+        plot(Coolingt,Coolingnorm,'k')
+        ylabel('Signal (arb units)','Interpreter','latex')
+        title('Cooling Normalized Interferometry Laser Deconvolution','Interpreter','latex')
+        xlabel('Time (s)','Interpreter','latex')
+        axis([0 inf -inf inf])
+    end
     
     %% Growth Section
     GrowthCutTimes=Times(Times>GrowthStartTime & Times<EndTime);
@@ -236,23 +254,26 @@ if GrowthSplit==1;
     GrowthS=GrowthSamplePhotovoltageV;
     
     Growthdeconv=(GrowthS./GrowthR).*mean(GrowthR);
-    figure()
-    plot(Growtht,Growthdeconv,'k')
-    ylabel('Signal (arb units)','Interpreter','latex')
-    title('Growth Interferometry Laser Deconvolution','Interpreter','latex')
-    xlabel('Time (s)','Interpreter','latex')
-    axis([0 inf -inf inf])
+    if IntermediateShow
+        figure()
+        plot(Growtht,Growthdeconv,'k')
+        ylabel('Signal (arb units)','Interpreter','latex')
+        title('Growth Interferometry Laser Deconvolution','Interpreter','latex')
+        xlabel('Time (s)','Interpreter','latex')
+        axis([0 inf -inf inf])
+    end
     
     Growthnorm=Growthdeconv./max(Growthdeconv);
-    figure()
-    plot(Growtht,Growthnorm,'k')
-    ylabel('Signal (arb units)','Interpreter','latex')
-    title('Growth Normalized Interferometry Laser Deconvolution','Interpreter','latex')
-    xlabel('Time (s)','Interpreter','latex')
-    axis([0 inf -inf inf])
+    if IntermediateShow
+        figure()
+        plot(Growtht,Growthnorm,'k')
+        ylabel('Signal (arb units)','Interpreter','latex')
+        title('Growth Normalized Interferometry Laser Deconvolution','Interpreter','latex')
+        xlabel('Time (s)','Interpreter','latex')
+        axis([0 inf -inf inf])
+    end
     
-    
-    Growthf=fit(Growtht,Growthdeconv,'exp2')
+    Growthf=fit(Growtht,Growthdeconv,'exp2');
     Growthf_coeff=coeffvalues(Growthf);
     a=Growthf_coeff(1);
     b=Growthf_coeff(2);
@@ -271,20 +292,95 @@ if GrowthSplit==1;
     ylabel('Signal (Volts)','Interpreter','latex')
     axis([0 inf -inf inf])
     
+    if IntermediateShow
+        figure()
+        yyaxis left
+        plot(Growtht,GrowthS,'k',Growtht,Growthf_values,'r')
+        ylabel('Sample Signal (Volts)','Interpreter','latex')
+        yyaxis right
+        plot(Growtht,GrowthR,'b')
+        title('Growth Raw Interferometry Data','Interpreter','latex')
+        xlabel('Time (s)','Interpreter','latex')
+        ylabel('Reference Signal (Volts)','Interpreter','latex')
+        ax = gca;
+        ax.YAxis(1).Color = 'k';
+        ax.YAxis(2).Color = 'b';
+        legend('Sample','Exponential fit','Reference','Location','Best')
+        axis([0 inf -inf inf])
+    end
+    
+    Growth_smoothed = smooth(Growtht,Growthdiv,0.05,'rloess');
+    Deriv1_Growth_smoothed = nderiv_fornberg(1, Growtht, Growth_smoothed);
+    Deriv2_Growth_smoothed = nderiv_fornberg(2, Growtht, Growth_smoothed);
+    Deriv2_Growth_doublesmoothed = smooth(Growtht,Deriv2_Growth_smoothed,0.05,'rloess');
+    [zeros_1stderiv_indices, zeros_1stderiv_xvalues] = NumericalRootsFunction(Growtht, Deriv1_Growth_smoothed);
+    [zeros_2ndderiv_indices, zeros_2ndderiv_xvalues] = NumericalRootsFunction(Growtht, Deriv2_Growth_doublesmoothed);
+    zeros_xindices = sort([zeros_1stderiv_indices, zeros_2ndderiv_indices]);
+    zeros_xvalues_exact = sort([zeros_1stderiv_xvalues, zeros_2ndderiv_xvalues])';
+    
+    zeros_xvalues = Growtht(zeros_xindices);
+    zeros_yvalues = Growthdiv(zeros_xindices);
+    
+    if IntermediateShow
     figure()
-    yyaxis left
-    plot(Growtht,GrowthS,'k',Growtht,Growthf_values,'r')
-    ylabel('Sample Signal (Volts)','Interpreter','latex')
-    yyaxis right
-    plot(Growtht,GrowthR,'b')
-    title('Growth Raw Interferometry Data','Interpreter','latex')
+    plot(Growtht,Growth_smoothed-1,'k',Growtht,Deriv1_Growth_smoothed,'r',Growtht,Deriv2_Growth_smoothed,'b')
+    title('Growth Interferometry Deconvolved Exponential Division Smoothed Derivatives','Interpreter','latex')
     xlabel('Time (s)','Interpreter','latex')
-    ylabel('Reference Signal (Volts)','Interpreter','latex')
-    ax = gca;
-    ax.YAxis(1).Color = 'k';
-    ax.YAxis(2).Color = 'b';
-    legend('Sample','Exponential fit','Reference','Location','Best')
+    ylabel('Signal (Volts)','Interpreter','latex')
     axis([0 inf -inf inf])
+    
+    figure()
+    plot(Growtht,Deriv2_Growth_doublesmoothed,'k',Growtht,Deriv2_Growth_smoothed,'b')
+    title('Growth Interferometry Deconvolved Exponential Division Smoothed Derivatives','Interpreter','latex')
+    xlabel('Time (s)','Interpreter','latex')
+    ylabel('Signal (Volts)','Interpreter','latex')
+    axis([0 inf -inf inf])
+    end
+    
+    figure()
+    plot(Growtht,Growthdiv,'k',Growtht,Growth_smoothed,'r', zeros_xvalues, zeros_yvalues, 'o')
+    title('Growth Interferometry Deconvolved Exponential Division Smoothed','Interpreter','latex')
+    xlabel('Time (s)','Interpreter','latex')
+    ylabel('Signal (Volts)','Interpreter','latex')
+    axis([0 inf -inf inf])
+      
+    length_segments = (1:max(size(zeros_xvalues)));
+    %segmentoffset = ((length_segments(2)*zeros_xvalues(1) - zeros_xvalues(2)*length_segments(1))/(zeros_xvalues(2)-zeros_xvalues(1)));
+    segmentoffset = ((length_segments(2)*zeros_xvalues_exact(1) - zeros_xvalues_exact(2)*length_segments(1))/(zeros_xvalues_exact(2)-zeros_xvalues_exact(1)));
+    %segmentoffset2 = length_segments(1)-zeros_xvalues(1)*((length_segments(2) - length_segments(1))/(zeros_xvalues(2)-zeros_xvalues(1)));
+    
+    figure()
+    plot(zeros_xvalues_exact, length_segments+segmentoffset, 'o')
+    title('Length vs Time','Interpreter','latex')
+    xlabel('Time (s)','Interpreter','latex')
+    ylabel('Length (arb units)','Interpreter','latex')
+    axis([0 inf 0 inf])
+    
+    Growth_rate = nderiv_fornberg(1, zeros_xvalues_exact, length_segments+segmentoffset);
+    figure()
+    plot(zeros_xvalues_exact, Growth_rate, 'o')
+    title('Growth Rate vs Time','Interpreter','latex')
+    xlabel('Time (s)','Interpreter','latex')
+    ylabel('Growth Rate (arb units)','Interpreter','latex')
+    axis([0 inf 0 inf])
+    
+    zeros_xindices = sort([zeros_1stderiv_indices, zeros_2ndderiv_indices]);
+    peaks_yvalues = Growthdiv(zeros_1stderiv_indices);
+    [top, middle, bottom] = PeakIndiciesSplit(zeros_xindices, zeros_1stderiv_indices, zeros_2ndderiv_indices, peaks_yvalues);
+    Osc_middle_fit=polyfit(Growtht(middle),Growthdiv(middle),4);
+
+    Osc_cleaned=Growthdiv./polyval(Osc_middle_fit, Growtht);
+    figure()
+    plot(Growtht,Growthdiv,'k',Growtht,Osc_cleaned,'r')
+    title('Osciallation Cleaning','Interpreter','latex')
+    xlabel('Time (s)','Interpreter','latex')
+    ylabel('Signal (Volts)','Interpreter','latex')
+    axis([0 inf -inf inf])
+    
+    
+    
+
+
 end
 %Save file
 if Save_file==0
@@ -300,12 +396,14 @@ else
         Coolingfilename=strcat(interferomfilename_only,'_cooling.txt');
         Growthfilename=strcat(interferomfilename_only,'_growth.txt');
         Paramfilename=strcat(interferomfilename_only,'_timeparameters.txt');
+        Processedfilename=strcat(interferomfilename_only,'_processed.txt');
         
         
         delete(Annealingfilename)
         delete(Coolingfilename)
         delete(Growthfilename)
         delete(Paramfilename)
+        delete(Processedfilename)
     end
     
 
@@ -316,7 +414,12 @@ else
     
     fid=fopen(Paramfilename,'wt');
     fprintf(fid, [ 'AnnealStartTime' '\t' 'GermaneTime' '\t' 'CoolingStartTime' '\t' 'GrowthStartTime' '\t' 'EndTime' '\r\n']);
-    fprintf(fid, '%f.0\t%f.0\t%f.0\t%f.0\t%f.0\r\n', [AnnealStartTime GermaneTime CoolingStartTime GrowthStartTime EndTime]');
+    fprintf(fid, '%6.1f\t%6.1f\t%6.1f\t%6.1f\t%6.1f\r\n', [AnnealStartTime GermaneTime CoolingStartTime GrowthStartTime EndTime]');
+    fclose(fid);true;
+    
+    fid=fopen(Processedfilename,'wt');
+    fprintf(fid, [ 'Steady State Growth Time (s)' '\t' 'Deconvolved Divided Signal' '\t'  'Length (arb units)' '\t' 'Growth Rate (arb units/s)' '\t' '\r\n']);
+    fprintf(fid, '%f\t%f\t%f\t%f\r\n', [zeros_xvalues_exact zeros_yvalues (length_segments+segmentoffset)' Growth_rate']');
     fclose(fid);true;
 
 
