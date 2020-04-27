@@ -1,5 +1,5 @@
 
-%% Interferometry Deconvolution
+%% Reflectometry Deconvolution
 %Michael Braun
 
 clear; close all; format shortG; warning('off','all')
@@ -105,12 +105,12 @@ addpath(genpath('E:\Michael\Stanford\Research\Data\Reflectometry'))
 cd 'E:\Michael\Stanford\Research\Data\Reflectometry'
 %addpath(genpath('C:\Spectre Working Folder\Reflectometry'))
 %cd 'C:\Spectre Working Folder\Reflectometry'
-[interferomfilename, folderpath] = uigetfile('*.txt;*.dat');
+[reflectomfilename, folderpath] = uigetfile('*.txt;*.dat');
 cd(folderpath)
-[~, interferomfilename_only, ~]=fileparts(interferomfilename);
+[~, reflectomfilename_only, ~]=fileparts(reflectomfilename);
 clc;
-fprintf('Working on %s\n', interferomfilename_only);
-matfilename = strcat(interferomfilename_only, '.mat');
+fprintf('Working on %s\n', reflectomfilename_only);
+matfilename = strcat(reflectomfilename_only, '.mat');
 if Load_mat
     if ~exist(matfilename, 'file') == 2
         errorMessage = sprintf('Error: The following folder does not exist:\n%s', folderpath);
@@ -129,7 +129,7 @@ if Update_smooth
     Derivative_loess = temp_Derivative_loess;
 end
 
-[Times,Temperaturetemp,Setpointtemp,HeaterPowertemp,StepTimes,SamplePhotovoltageVtemp,SampleStandardDeviationVtemp,ReferencePhotovoltageVtemp,ReferenceStandardDeviationVtemp,~,Numberofmeasurementstemp,Timestamp] = ImportFunction(interferomfilename);
+[Times,Temperaturetemp,Setpointtemp,HeaterPowertemp,StepTimes,SamplePhotovoltageVtemp,SampleStandardDeviationVtemp,ReferencePhotovoltageVtemp,ReferenceStandardDeviationVtemp,~,Numberofmeasurementstemp,Timestamp] = ImportFunction(reflectomfilename);
 
 
 %% Full Graph
@@ -156,7 +156,7 @@ if IntermediateShow == 1
     figure()
     plot(t,deconv,'k')
     ylabel('Signal (arb units)','Interpreter','latex')
-    title('Interferometry Laser Deconvolution','Interpreter','latex')
+    title('Reflectometry Laser Deconvolution','Interpreter','latex')
     xlabel('Time (s)','Interpreter','latex')
     axis([0 inf -inf inf])
 end
@@ -166,7 +166,7 @@ if IntermediateShow == 1
     figure()
     plot(t,norm,'k')
     ylabel('Signal (arb units)','Interpreter','latex')
-    title('Normalized Interferometry Laser Deconvolution','Interpreter','latex')
+    title('Normalized Reflectometry Laser Deconvolution','Interpreter','latex')
     xlabel('Time (s)','Interpreter','latex')
     axis([0 inf -inf inf])
 end
@@ -178,7 +178,7 @@ if IntermediateShow == 1
     ylabel('Sample Signal (Volts)','Interpreter','latex')
     yyaxis right
     plot(t,R,'b')
-    title('Raw Interferometry Data','Interpreter','latex')
+    title('Raw Reflectometry Data','Interpreter','latex')
     xlabel('Time (s)','Interpreter','latex')
     ylabel('Reference Signal (Volts)','Interpreter','latex')
     ax = gca;
@@ -212,7 +212,7 @@ if GrowthSplit==1;
         figure()
         plot(Annealt,Annealdeconv,'k')
         ylabel('Signal (arb units)','Interpreter','latex')
-        title('Annealing and Seeding Interferometry Laser Deconvolution','Interpreter','latex')
+        title('Annealing and Seeding Reflectometry Laser Deconvolution','Interpreter','latex')
         xlabel('Time (s)','Interpreter','latex')
         axis([0 inf -inf inf])
     end
@@ -222,7 +222,7 @@ if GrowthSplit==1;
         figure()
         plot(Annealt,Annealnorm,'k')
         ylabel('Signal (arb units)','Interpreter','latex')
-        title('Annealing and Seeding Normalized Interferometry Laser Deconvolution','Interpreter','latex')
+        title('Annealing and Seeding Normalized Reflectometry Laser Deconvolution','Interpreter','latex')
         xlabel('Time (s)','Interpreter','latex')
         axis([0 inf -inf inf])
         
@@ -233,7 +233,7 @@ if GrowthSplit==1;
         ylabel('Sample Signal (Volts)','Interpreter','latex')
         yyaxis right
         plot(Annealt,AnnealR,'b')
-        title('Annealing and Seeding Raw Interferometry Data','Interpreter','latex')
+        title('Annealing and Seeding Raw Reflectometry Data','Interpreter','latex')
         xlabel('Time (s)','Interpreter','latex')
         ylabel('Reference Signal (Volts)','Interpreter','latex')
         ax = gca;
@@ -264,7 +264,7 @@ if GrowthSplit==1;
         figure()
         plot(Coolingt,Coolingdeconv,'k')
         ylabel('Signal (arb units)','Interpreter','latex')
-        title('Cooling Interferometry Laser Deconvolution','Interpreter','latex')
+        title('Cooling Reflectometry Laser Deconvolution','Interpreter','latex')
         xlabel('Time (s)','Interpreter','latex')
         axis([0 inf -inf inf])
     end
@@ -274,7 +274,7 @@ if GrowthSplit==1;
         figure()
         plot(Coolingt,Coolingnorm,'k')
         ylabel('Signal (arb units)','Interpreter','latex')
-        title('Cooling Normalized Interferometry Laser Deconvolution','Interpreter','latex')
+        title('Cooling Normalized Reflectometry Laser Deconvolution','Interpreter','latex')
         xlabel('Time (s)','Interpreter','latex')
         axis([0 inf -inf inf])
     end
@@ -301,7 +301,7 @@ if GrowthSplit==1;
         figure()
         plot(Growtht,Growthdeconv,'k')
         ylabel('Signal (arb units)','Interpreter','latex')
-        title('Growth Interferometry Laser Deconvolution','Interpreter','latex')
+        title('Growth Reflectometry Laser Deconvolution','Interpreter','latex')
         xlabel('Time (s)','Interpreter','latex')
         axis([0 inf -inf inf])
     end
@@ -311,7 +311,7 @@ if GrowthSplit==1;
         figure()
         plot(Growtht,Growthnorm,'k')
         ylabel('Signal (arb units)','Interpreter','latex')
-        title('Growth Normalized Interferometry Laser Deconvolution','Interpreter','latex')
+        title('Growth Normalized Reflectometry Laser Deconvolution','Interpreter','latex')
         xlabel('Time (s)','Interpreter','latex')
         axis([0 inf -inf inf])
     end
@@ -333,7 +333,7 @@ if GrowthSplit==1;
     
     figure()
     plot(Growtht,Growthdiv,'k')
-    title('Growth Interferometry Deconvolved Exponential Division','Interpreter','latex')
+    title('Growth Reflectometry Deconvolved Exponential Division','Interpreter','latex')
     xlabel('Time (s)','Interpreter','latex')
     ylabel('Signal (Volts)','Interpreter','latex')
     axis([0 inf -inf inf])
@@ -345,7 +345,7 @@ if GrowthSplit==1;
         ylabel('Sample Signal (Volts)','Interpreter','latex')
         yyaxis right
         plot(Growtht,GrowthR,'b')
-        title('Growth Raw Interferometry Data','Interpreter','latex')
+        title('Growth Raw Reflectometry Data','Interpreter','latex')
         xlabel('Time (s)','Interpreter','latex')
         ylabel('Reference Signal (Volts)','Interpreter','latex')
         ax = gca;
@@ -370,14 +370,14 @@ if GrowthSplit==1;
     if IntermediateShow
         figure()
         plot(Growtht,Growth_smoothed-1,'k',Growtht,Deriv1_Growth_smoothed,'r',Growtht,Deriv2_Growth_smoothed,'b')
-        title('Growth Interferometry Deconvolved Exponential Division Smoothed Derivatives','Interpreter','latex')
+        title('Growth Reflectometry Deconvolved Exponential Division Smoothed Derivatives','Interpreter','latex')
         xlabel('Time (s)','Interpreter','latex')
         ylabel('Signal (Volts)','Interpreter','latex')
         axis([0 inf -inf inf])
         
         figure()
         plot(Growtht,Deriv2_Growth_doublesmoothed,'k',Growtht,Deriv2_Growth_smoothed,'b')
-        title('Growth Interferometry Deconvolved Exponential Division Smoothed Derivatives','Interpreter','latex')
+        title('Growth Reflectometry Deconvolved Exponential Division Smoothed Derivatives','Interpreter','latex')
         xlabel('Time (s)','Interpreter','latex')
         ylabel('Signal (Volts)','Interpreter','latex')
         axis([0 inf -inf inf])
@@ -385,7 +385,7 @@ if GrowthSplit==1;
     
     figure()
     plot(Growtht,Growthdiv,'k',Growtht,Growth_smoothed,'r', zeros_xvalues, zeros_yvalues, 'o')
-    title('Growth Interferometry Deconvolved Exponential Division Smoothed','Interpreter','latex')
+    title('Growth Reflectometry Deconvolved Exponential Division Smoothed','Interpreter','latex')
     xlabel('Time (s)','Interpreter','latex')
     ylabel('Signal (Volts)','Interpreter','latex')
     axis([0 inf -inf inf])
@@ -435,18 +435,18 @@ end
 %Save file
 if Save_file==0
 else
-    samplefolderpath = strcat(folderpath,interferomfilename_only,'_Processed');
+    samplefolderpath = strcat(folderpath,reflectomfilename_only,'_Processed');
     mkdir(samplefolderpath)
     cd(samplefolderpath)
-    fullfilename=strcat(interferomfilename_only,'_full.txt');
+    fullfilename=strcat(reflectomfilename_only,'_full.txt');
     delete(fullfilename)
     
     if GrowthSplit==1;
-        Annealingfilename=strcat(interferomfilename_only,'_annealing.txt');
-        Coolingfilename=strcat(interferomfilename_only,'_cooling.txt');
-        Growthfilename=strcat(interferomfilename_only,'_growth.txt');
-        Paramfilename=strcat(interferomfilename_only,'_timeparameters.txt');
-        Processedfilename=strcat(interferomfilename_only,'_processed.txt');
+        Annealingfilename=strcat(reflectomfilename_only,'_annealing.txt');
+        Coolingfilename=strcat(reflectomfilename_only,'_cooling.txt');
+        Growthfilename=strcat(reflectomfilename_only,'_growth.txt');
+        Paramfilename=strcat(reflectomfilename_only,'_timeparameters.txt');
+        Processedfilename=strcat(reflectomfilename_only,'_processed.txt');
         
         
         delete(Annealingfilename)
